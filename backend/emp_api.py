@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
+import json
 import os
 from pydantic import BaseModel
+import re
 import subprocess
 import traceback
 import tempfile
@@ -90,21 +92,30 @@ def run_emp_calc(data: EMPInput):
                 peak_efield = float(line.split()[6])
             if "PEAK OCCURRED AT" in line:
                 peak_time = float(line.split()[3])
-            if "EFIELD VALUES AT TARGET" in line:
-                idx = output.splitlines().index(line) + 2
-                for l in output.splitlines()[idx:]:
-                    if not l.strip():
-                        break
-                    time_series.extend([float(val) for val in l.split()])
+            
+            # Extract time and E-field values
+            # Use regex to extract numerical values from the "TIME =" lines
+            match = re.search(r"TIME =\s+([\d\.]+)\s+SHAKES\s+E\(T,RMAX\) =\s+([\d\.E+-]+)", line)
+            if match:
+                time_value = float(match.group(1))  # Extract TIME value
+                e_field_value = float(match.group(2))  # Extract E(T,RMAX) value
 
-        time_step = 0.1
-        time_series_data = [{"time": round(time_step * i, 2), "eField": val} for i, val in enumerate(time_series)]
+                time_series.append({"time": time_value, "eField": e_field_value})
 
-        return {
+        # Before returning the response, add:
+        response_dict = {
             "peakEField": peak_efield,
             "peakTime": peak_time,
-            "timeSeriesData": time_series_data
-        }
+            "timeSeriesData": time_series
+            }
+        print("\nDEBUG: API Response JSON:")
+        print(json.dumps(response_dict, indent=4))
+
+        # Verify time_series_data is actually getting data
+        print("\nDEBUG: time_series_data:")
+        print(time_series[:5])
+
+        return response_dict
 
     except Exception as e:
         print(traceback.format_exc())  # Full traceback for debugging
