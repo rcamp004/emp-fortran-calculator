@@ -1,0 +1,16 @@
+services:
+  emp-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile  # Backend Dockerfile location
+    ports:
+      - "8000:8000"
+    restart: always
+
+  emp-frontend:
+    build:
+      context: ./frontend  # Assuming your streamlit code is here
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    restart: always
