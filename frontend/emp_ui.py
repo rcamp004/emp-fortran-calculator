@@ -40,11 +40,6 @@ if submitted:
         "outputControl": outputControl, "ap": ap, "bp": bp, "rnp": rnp, "top": top
     }
 
-    # If debug mode is enabled, display the payload before sending
-    if debug_mode:
-        st.subheader("API JSON Payload (Debug)")
-        st.json(payload)  # Nicely formatted JSON display
-
     with st.spinner("Running simulation. Please wait..."):
         try:
             response = requests.post(API_URL, json=payload)
@@ -58,6 +53,20 @@ if submitted:
                 st.write(f"**Peak Time:** {result['peakTime']:.2f} shakes")
 
                 df = pd.DataFrame(result['timeSeriesData'])
+
+                    # If debug mode is enabled, display the payload before sending
+                if debug_mode:
+                    st.subheader("API JSON Payload (Debug)")
+                    st.json(payload)  # Nicely formatted JSON display
+
+                    # DEBUG Show the data frame contents
+                    st.subheader("DEBUG: Dataframe Contents")
+                    st.write(df)
+
+                    # DEBUG Check what columns exist in the dataframe
+                    st.write("DataFrame Columns:", df.columns.tolist())
+
+                # Interactive Plotly graph
                 fig = px.line(df, x='time', y='eField', title="EMP E-Field over Time",
                               labels={'time': 'Time (shakes)', 'eField': 'E-Field (V/m)'},
                               markers=True)
