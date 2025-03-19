@@ -2,13 +2,36 @@ import streamlit as st
 import requests
 import plotly.express as px
 import pandas as pd
-import json  # For pretty-printing JSON
+import json
+import os
 
 # Backend URL
 API_URL = "http://emp-backend:8000/run"
 
 # Title
 st.title("EMP Fortran Calculator")
+
+# Test Mode Toggle
+test_mode = st.checkbox("Enable Test Mode (Use Expected Output)", value=False)
+
+def show_debug_info(data, title="Debug Info"):
+    """ Function to display debugging information in Streamlit """
+    st.subheader(title)
+    
+    if isinstance(data, dict):  # JSON data
+        st.json(data)
+    elif isinstance(data, pd.DataFrame):  # Pandas DataFrame
+        st.write(data)
+        st.write("DataFrame Columns:", data.columns.tolist())
+
+def plot_emp_graph(df, title="EMP E-Field over Time"):
+    """ Function to plot the EMP E-Field time series graph """
+    fig = px.line(df, x='time', y='eField', title=title,
+                  labels={'time': 'Time (shakes)', 'eField': 'E-Field (V/m)'},
+                  markers=True)
+    fig.update_traces(line=dict(width=3))
+    fig.update_layout(hovermode='x unified')
+    st.plotly_chart(fig, use_container_width=True)
 
 # Input form
 with st.form("emp_form"):
@@ -32,8 +55,33 @@ with st.form("emp_form"):
 
     submitted = st.form_submit_button("Calculate EMP")
 
-# API call and result display
-if submitted:
+# Load expected output if Test Mode is enabled
+if test_mode:
+    expected_output_file = "/app/tests/expected_output.json"
+    st.write(f"Checking if {expected_output_file} exists: {os.path.exists(expected_output_file)}")
+    
+    if os.path.exists(expected_output_file):
+        with open(expected_output_file, "r") as f:
+            result = json.load(f)
+
+        st.success("Loaded Expected Output Data!")
+        st.subheader("Results (Test Mode)")
+        st.write(f"**Peak E-Field:** {result['peakEField']:.3f} V/m")
+        st.write(f"**Peak Time:** {result['peakTime']:.2f} shakes")
+
+        df = pd.DataFrame(result['timeSeriesData'])
+
+        if debug_mode:
+            show_debug_info(result, title="DEBUG: Loaded Expected Output Data")
+            show_debug_info(df, title="DEBUG: Dataframe Contents")
+
+        # Call the plotting function
+        plot_emp_graph(df, title="EMP E-Field over Time (Test Mode)")
+    else:
+        st.error("Test Mode is enabled, but `tests/expected_output.json` was not found.")
+
+# If not in Test Mode, send API request
+elif submitted:
     payload = {
         "x": x, "y": y, "z": z, "hob": hob, "gammaYield": gammaYield,
         "bField": bField, "bAngle": bAngle, "nSteps": nSteps,
@@ -54,25 +102,12 @@ if submitted:
 
                 df = pd.DataFrame(result['timeSeriesData'])
 
-                    # If debug mode is enabled, display the payload before sending
                 if debug_mode:
-                    st.subheader("API JSON Payload (Debug)")
-                    st.json(payload)  # Nicely formatted JSON display
+                    show_debug_info(payload, title="DEBUG: API JSON Payload (Debug Mode)")
+                    show_debug_info(df, title="DEBUG: Dataframe Contents")
 
-                    # DEBUG Show the data frame contents
-                    st.subheader("DEBUG: Dataframe Contents")
-                    st.write(df)
-
-                    # DEBUG Check what columns exist in the dataframe
-                    st.write("DataFrame Columns:", df.columns.tolist())
-
-                # Interactive Plotly graph
-                fig = px.line(df, x='time', y='eField', title="EMP E-Field over Time",
-                              labels={'time': 'Time (shakes)', 'eField': 'E-Field (V/m)'},
-                              markers=True)
-                fig.update_traces(line=dict(width=3))
-                fig.update_layout(hovermode='x unified')
-                st.plotly_chart(fig, use_container_width=True)
+                # Call the plotting function
+                plot_emp_graph(df, title="EMP E-Field over Time")
             else:
                 st.error(f"Simulation failed: {response.status_code} - {response.text}")
         except Exception as e:
