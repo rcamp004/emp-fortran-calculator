@@ -6,6 +6,8 @@ services:
     ports:
       - "8000:8000"
     restart: always
+    volumes:
+      - ./tests:/app/tests
 
   emp-frontend:
     build:
@@ -14,3 +16,5 @@ services:
     ports:
       - "8501:8501"
     restart: always
+    volumes:
+      - ./tests:/app/tests

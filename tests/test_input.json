@@ -1,0 +1,16 @@
+{
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0,
+    "hob": 100.0,
+    "gammaYield": 0.001,
+    "bField": 2e-05,
+    "bAngle": 20.0,
+    "nSteps": 50,
+    "outputControl": 0,
+    "ap": 2.2,
+    "bp": 0.25,
+    "rnp": 5.62603,
+    "top": 2.24
+  }
+  

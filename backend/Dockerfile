@@ -1,7 +1,9 @@
 FROM ubuntu:16.04
 
 # Install build tools and dependencies for Python
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y vim-common dos2unix && \
+    apt-get install -y \
     build-essential \
     libssl-dev \
     zlib1g-dev \
